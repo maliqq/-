@@ -9,4 +9,5 @@ Gem::Specification.new do |s|
   s.licence     = ['MIT']
 
   s.add_dependency 'virtus'
+  s.add_development_dependency 'minitest'
 end

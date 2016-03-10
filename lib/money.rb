@@ -1,15 +1,6 @@
 class Money < Struct.new(:value, :currency)
 
   class << self
-    def from(value)
-      case value
-      when BigDecimal
-      when Float
-      when Integer
-      when String
-      end
-    end
-
     def wrap(value, currency)
       if value.is_a?(Money)
         raise ArgumentError unless value.currency == currency
@@ -20,7 +11,7 @@ class Money < Struct.new(:value, :currency)
     end
   end
 
-  def eql?(other)
+  def ==(other)
     other.is_a?(Money) && other.value == value && (value == 0 || other.currency == currency)
   end
 
@@ -28,19 +19,22 @@ class Money < Struct.new(:value, :currency)
     wrap_value(other) <=> value
   end
 
-  delegate :zero?, :nonzero?, to: :value
-  delegate :abs, :-, :+, to: :converted_value
+  def zero?; value.zero?; end
+  def nonzero?; value.nonzero?; end
 
-  class ConvertedValue < BasicObject
+  class UnaryWrapper < BasicObject
     def initialize(money)
       @money = money
     end
 
     def method_missing(method, *args, &block)
-      new_value = money.value.send(method, *args, &block)
-      money.wrap(new_value)
+      new_value = @money.value.send(method, *args, &block)
+      @money.send :wrap, new_value
     end
   end
+  def abs; unary_wrap.abs; end
+  def -@; unary_wrap.send(:-@); end
+  def +@; unary_wrap.send(:+@); end
 
   def +(other)
     wrap(value + wrap_value(other))
@@ -86,5 +80,7 @@ class Money < Struct.new(:value, :currency)
         Money.wrap_numeric(some_value)
       end
     end
+
+    def unary_wrap; UnaryWrapper.new(self); end
 
 end
